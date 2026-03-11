@@ -85,7 +85,7 @@ const AppSidebar = () => {
         </SidebarGroup>
         <SidebarSeparator />
         <SidebarGroup>
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupLabel>Letters</SidebarGroupLabel>
           <SidebarGroupAction>
             <RiAddLine />
           </SidebarGroupAction>
@@ -93,9 +93,9 @@ const AppSidebar = () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/#">
+                  <Link href="/letters">
                     <RiProjector2Line />
-                    See all Projects
+                    See all Letters
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -103,7 +103,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <Link href="/#">
                     <RiAddLine />
-                    Add new Project
+                    Add new Letter
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
