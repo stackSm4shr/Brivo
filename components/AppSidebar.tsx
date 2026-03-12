@@ -1,13 +1,11 @@
+"use client";
+
 import {
   RiAddLine,
   RiArrowDropUpLine,
   RiCalendar2Line,
-  RiHome2Line,
   RiLogoutBoxLine,
-  RiProfileLine,
   RiProjector2Line,
-  RiPulseAiLine,
-  RiSearch2Line,
   RiSettings2Line,
   RiUser2Line,
 } from "@remixicon/react";
@@ -34,14 +32,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-
-const items = [
-  { title: "Home", url: "/", icon: RiHome2Line },
-  { title: "Calendar", url: "/calendar", icon: RiCalendar2Line },
-  { title: "Search", url: "#", icon: RiSearch2Line },
-];
+import { useAuth } from "@/context/auth-context";
 
 const AppSidebar = () => {
+  const { user, loading, logout } = useAuth();
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4 pt-5 pb-5">
@@ -67,78 +61,86 @@ const AppSidebar = () => {
           <SidebarGroupLabel>Sidebar</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
+                    <Link href="/callendar">
+                      <RiCalendar2Line />
+                      Callendar
+                    </Link>
                   </SidebarMenuButton>
-                  {item.title === "Calendar" && (
                     <SidebarMenuBadge>12</SidebarMenuBadge>
-                  )}
                 </SidebarMenuItem>
-              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarSeparator />
-        <SidebarGroup>
-          <SidebarGroupLabel>Letters</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <RiAddLine />
-          </SidebarGroupAction>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/letters">
-                    <RiProjector2Line />
-                    See all Letters
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/#">
-                    <RiAddLine />
-                    Add new Letter
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {!loading && user && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Letters</SidebarGroupLabel>
+
+            <SidebarGroupAction>
+              <RiAddLine />
+            </SidebarGroupAction>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/letters">
+                      <RiProjector2Line />
+                      See all Letters
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/#">
+                      <RiAddLine />
+                      Add new Letter
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <RiUser2Line />
-                  Dr. Dorian
-                  <RiArrowDropUpLine className="ml-auto"></RiArrowDropUpLine>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <RiUser2Line />
-                  Account
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <RiSettings2Line />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive">
-                  <RiLogoutBoxLine />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <RiUser2Line />
+                    {user.name ?? user.email}
+                    <RiArrowDropUpLine className="ml-auto"></RiArrowDropUpLine>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    <RiUser2Line />
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <RiSettings2Line />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={async () => {
+                      await logout();
+                    }}
+                  >
+                    <RiLogoutBoxLine />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

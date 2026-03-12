@@ -10,7 +10,7 @@ export default function LandingPage() {
           <Image src="/logo.svg" alt="logo" width={80} height={80}></Image>
         </span>
 
-        <h1 className="max-w-6xl text-4xl font-bold tracking-tight sm:text-6xl">
+        <h1 className="max-w-6xl text-xl font-bold tracking-tight sm:text-3xl">
           Brivo turns confusing bureaucracy into clear next steps.
         </h1>
 
@@ -19,12 +19,12 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-8 flex gap-4">
-          <Button className="w-2xs">
+          <Button className="">
             <Link href="/login">
               Login
             </Link>
           </Button>
-          <Button variant={"outline"} className="w-2xs">
+          <Button variant={"outline"} className="">
             <Link href="/dashboard">
               Go to dashboard
             </Link>
