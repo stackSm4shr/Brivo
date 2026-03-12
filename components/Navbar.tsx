@@ -7,7 +7,6 @@ import {
   RiUser2Line,
 } from "@remixicon/react";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,37 +48,6 @@ const Navbar = () => {
             <DropdownMenuItem onClick={() => setTheme("system")}>
               System
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent sideOffset={10}>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <RiUser2Line className="h-[1.2rem] w-[1.2rem] mr-2" />
-                Profile
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <RiSettings2Line className="h-[1.2rem] w-[1.2rem] mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive">
-                <RiLogoutBoxLine className="h-[1.2rem] w-[1.2rem] mr-2" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
