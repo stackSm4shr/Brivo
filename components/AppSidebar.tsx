@@ -4,6 +4,7 @@ import {
   RiAddLine,
   RiArrowDropUpLine,
   RiCalendar2Line,
+  RiEditBoxLine,
   RiLogoutBoxLine,
   RiProjector2Line,
   RiSettings2Line,
@@ -69,6 +70,14 @@ const AppSidebar = () => {
                     </Link>
                   </SidebarMenuButton>
                     <SidebarMenuBadge>12</SidebarMenuBadge>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/editor">
+                      <RiEditBoxLine/>
+                      Document Assistant
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

@@ -6,12 +6,12 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-6 text-center">
-        <span className="mb-4 rounded-full border px-3 py-1 text-sm">
-          <Image src="/logo.svg" alt="logo" width={80} height={80}></Image>
+        <span className="mb-4 px-3 py-1 text-sm">
+          <Image src="/brivo_landing_no_text.svg" alt="logo" width={400} height={200}></Image>
         </span>
 
         <h1 className="max-w-6xl text-xl font-bold tracking-tight sm:text-3xl">
-          Brivo turns confusing bureaucracy into clear next steps.
+          Turns confusing bureaucracy into clear next steps.
         </h1>
 
         <p className="mt-6 max-w-2xl text-muted-foreground text-lg">
