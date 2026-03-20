@@ -23,7 +23,7 @@ type SensitiveMatch = {
   end: number;
 };
 
-type AnalyzeAction = "explain" | "draft-reply";
+type AnalyzeAction = "explain" | "draft-reply" | "translate";
 
 type ExplainResult = {
   mode: "explain";
@@ -45,7 +45,15 @@ type DraftReplyResult = {
   toneNotes: string[];
 };
 
-type AiResult = ExplainResult | DraftReplyResult;
+type TranslateResult = {
+  mode: "translate";
+  title: string;
+  targetLanguage: string;
+  translatedText: string;
+  notes: string[];
+};
+
+type AiResult = ExplainResult | DraftReplyResult | TranslateResult;
 
 const SENSITIVE_PATTERNS: { label: string; regex: RegExp }[] = [
   {
@@ -101,16 +109,16 @@ function fixSpacedWordsConservatively(text: string) {
 
   fixed = fixed.replace(
     /\b(?:[A-Za-zÄÖÜäöüß]\s){2,}[A-Za-zÄÖÜäöüß]\b/g,
-    (match) => match.replace(/\s/g, "")
+    (match) => match.replace(/\s/g, ""),
   );
 
   fixed = fixed.replace(/\b(?:\d\s){3,}\d\b/g, (match) =>
-    match.replace(/\s/g, "")
+    match.replace(/\s/g, ""),
   );
 
   fixed = fixed.replace(
     /\b(?:[A-Za-z0-9._%+-]\s){2,}@[A-Za-z0-9.\s-]+\.[A-Za-z\s]{2,}\b/g,
-    (match) => match.replace(/\s/g, "")
+    (match) => match.replace(/\s/g, ""),
   );
 
   fixed = fixed.replace(/\b(?:[A-Z0-9]\s){10,}[A-Z0-9]\b/g, (match) => {
@@ -133,7 +141,6 @@ function findSensitiveData(text: string): SensitiveMatch[] {
 
     for (const match of normalized.matchAll(regex)) {
       if (!match[0] || match.index == null) continue;
-
       results.push({
         label: pattern.label,
         value: match[0],
@@ -163,10 +170,9 @@ async function extractPdfText(file: File): Promise<string> {
     const pageText = textContent.items
       .map((item: any, index: number, arr: any[]) => {
         if (!("str" in item)) return "";
-
         let text = item.str ?? "";
-        const next = arr[index + 1];
 
+        const next = arr[index + 1];
         if (next && item.transform && next.transform) {
           const currentX = item.transform[4];
           const nextX = next.transform[4];
@@ -223,8 +229,10 @@ export function PdfSanitizerCard() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [result, setResult] = useState<AiResult | null>(null);
   const [action, setAction] = useState<AnalyzeAction>("explain");
+  const [targetLanguage, setTargetLanguage] = useState("English");
 
   const matches = useMemo(() => findSensitiveData(text), [text]);
   const labels = [...new Set(matches.map((m) => m.label))];
@@ -235,6 +243,7 @@ export function PdfSanitizerCard() {
 
     setLoading(true);
     setError("");
+    setSaveMessage("");
     setResult(null);
     setFileName(file.name);
 
@@ -278,6 +287,7 @@ export function PdfSanitizerCard() {
     setText(originalText);
     setResult(null);
     setError("");
+    setSaveMessage("");
   }
 
   async function sendSanitizedText() {
@@ -286,8 +296,14 @@ export function PdfSanitizerCard() {
       return;
     }
 
+    if (action === "translate" && !targetLanguage.trim()) {
+      setError("Please enter a target language.");
+      return;
+    }
+
     setSending(true);
     setError("");
+    setSaveMessage("");
     setResult(null);
 
     try {
@@ -303,8 +319,9 @@ export function PdfSanitizerCard() {
             action,
             text,
             language: "de",
+            ...(action === "translate" ? { targetLanguage } : {}),
           }),
-        }
+        },
       );
 
       const data = await response.json().catch(() => null);
@@ -313,7 +330,33 @@ export function PdfSanitizerCard() {
         throw new Error(data?.error || "Request failed");
       }
 
-      setResult(data.result as AiResult);
+      const aiResult = data.result as AiResult;
+      setResult(aiResult);
+
+      const saveResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/letters`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            fileName,
+            action,
+            sanitizedText: text,
+            aiResult,
+          }),
+        },
+      );
+
+      const saveData = await saveResponse.json().catch(() => null);
+
+      if (!saveResponse.ok) {
+        throw new Error(saveData?.error || "AI result created but failed to save");
+      }
+
+      setSaveMessage("Saved to your letters list.");
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed.");
@@ -328,19 +371,22 @@ export function PdfSanitizerCard() {
         <CardHeader>
           <CardTitle>PDF to text sanitizer</CardTitle>
           <CardDescription>
-            Upload a PDF, review extracted text, remove sensitive data, then send
-            only the cleaned text to your backend.
+            Upload a PDF, review extracted text, remove sensitive data, then send only the
+            cleaned text to your backend.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Input
-              type="file"
-              accept="application/pdf"
-              onChange={onFileChange}
-              disabled={loading || sending}
-            />
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload PDF</label>
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={onFileChange}
+                disabled={loading || sending}
+              />
+            </div>
 
             <div className="flex flex-wrap gap-2">
               <Button
@@ -351,7 +397,6 @@ export function PdfSanitizerCard() {
               >
                 Explain
               </Button>
-
               <Button
                 type="button"
                 variant={action === "draft-reply" ? "default" : "outline"}
@@ -360,8 +405,44 @@ export function PdfSanitizerCard() {
               >
                 Draft reply
               </Button>
+              <Button
+                type="button"
+                variant={action === "translate" ? "default" : "outline"}
+                onClick={() => setAction("translate")}
+                disabled={loading || sending}
+              >
+                Translate
+              </Button>
             </div>
           </div>
+
+          {action === "translate" && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Target language</label>
+                <Input
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  placeholder="English, German, Turkish, Arabic..."
+                  disabled={loading || sending}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {["English", "German", "Turkish", "Arabic"].map((lang) => (
+                  <Button
+                    key={lang}
+                    type="button"
+                    variant={targetLanguage === lang ? "default" : "outline"}
+                    onClick={() => setTargetLanguage(lang)}
+                    disabled={loading || sending}
+                  >
+                    {lang}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {loading && (
             <Alert>
@@ -373,7 +454,7 @@ export function PdfSanitizerCard() {
           )}
 
           {fileName && !loading && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               <Badge variant="secondary">Loaded file</Badge>
               <span className="text-sm text-muted-foreground">{fileName}</span>
             </div>
@@ -386,122 +467,112 @@ export function PdfSanitizerCard() {
             </Alert>
           )}
 
+          {saveMessage && (
+            <Alert>
+              <AlertTitle>Saved</AlertTitle>
+              <AlertDescription>{saveMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {!!text && (
-            <>
-              <Card className="rounded-2xl border-dashed">
-                <CardHeader>
-                  <CardTitle className="text-base">Review before sending</CardTitle>
-                  <CardDescription>
-                    Automatic detection helps, but it can miss names, addresses,
-                    case numbers, and unusual identifiers. Always review the text
-                    manually before submission.
-                  </CardDescription>
-                </CardHeader>
+            <Card className="rounded-2xl border-dashed">
+              <CardHeader>
+                <CardTitle>Review before sending</CardTitle>
+                <CardDescription>
+                  Automatic detection helps, but it can miss names, addresses, case numbers,
+                  and unusual identifiers. Always review the text manually before submission.
+                </CardDescription>
+              </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">
-                      {matches.length} possible sensitive value
-                      {matches.length === 1 ? "" : "s"}
-                    </Badge>
-
-                    {labels.map((label) => (
-                      <Button
-                        key={label}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => redactAllByLabel(label)}
-                      >
-                        Redact all {label}
-                      </Button>
-                    ))}
-
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge>
+                    {matches.length} possible sensitive value{matches.length === 1 ? "" : "s"}
+                  </Badge>
+                  {labels.map((label) => (
                     <Button
+                      key={label}
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={resetText}
+                      onClick={() => redactAllByLabel(label)}
                     >
-                      Reset text
+                      Redact all {label}
                     </Button>
-                  </div>
+                  ))}
+                  <Button type="button" variant="ghost" size="sm" onClick={resetText}>
+                    Reset text
+                  </Button>
+                </div>
 
-                  <Separator />
+                <Separator />
 
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium">Detected sensitive data</h3>
-
-                    {matches.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No obvious sensitive values detected.
-                      </p>
-                    ) : (
-                      <ScrollArea className="h-64 rounded-md border p-3">
-                        <div className="space-y-3">
-                          {matches.slice(0, 150).map((match, index) => (
-                            <div
-                              key={`${match.label}-${match.start}-${index}`}
-                              className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-start sm:justify-between"
-                            >
-                              <div className="min-w-0 space-y-1">
-                                <Badge variant="secondary">{match.label}</Badge>
-                                <p className="break-all text-sm text-muted-foreground">
-                                  {match.value}
-                                </p>
-                              </div>
-
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  redactValue(match.value, match.label)
-                                }
-                              >
-                                Redact
-                              </Button>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Detected sensitive data</h3>
+                  {matches.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No obvious sensitive values detected.
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-56 rounded-md border p-3">
+                      <div className="space-y-3">
+                        {matches.slice(0, 150).map((match, index) => (
+                          <div
+                            key={`${match.label}-${match.start}-${index}`}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                          >
+                            <div className="min-w-0 space-y-1">
+                              <Badge variant="outline">{match.label}</Badge>
+                              <p className="break-all text-sm text-muted-foreground">
+                                {match.value}
+                              </p>
                             </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => redactValue(match.value, match.label)}
+                            >
+                              Redact
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </div>
 
-              <Card className="rounded-2xl">
-                <CardHeader>
-                  <CardTitle>Editable extracted text</CardTitle>
-                  <CardDescription>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Editable extracted text</h3>
+                  <p className="text-sm text-muted-foreground">
                     Only the text below will be sent to your backend.
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
+                  </p>
                   <Textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     className="min-h-[26rem] font-mono text-sm"
                   />
+                </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={sendSanitizedText} disabled={sending || loading}>
-                      {sending ? "Sending..." : "Send sanitized text"}
-                    </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={sendSanitizedText} disabled={sending || loading}>
+                    {sending
+                      ? "Sending..."
+                      : action === "translate"
+                        ? "Translate sanitized text"
+                        : "Send sanitized text"}
+                  </Button>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={resetText}
-                      disabled={sending || loading}
-                    >
-                      Restore extracted text
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetText}
+                    disabled={sending || loading}
+                  >
+                    Restore extracted text
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </CardContent>
       </Card>
@@ -516,7 +587,28 @@ export function PdfSanitizerCard() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {result.mode === "explain" ? (
+            {result.mode === "translate" ? (
+              <>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Target language</h3>
+                  <p className="text-sm text-muted-foreground">{result.targetLanguage}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Translated text</h3>
+                  <Textarea
+                    value={result.translatedText}
+                    readOnly
+                    className="min-h-[18rem] text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Notes</h3>
+                  {renderList(result.notes)}
+                </div>
+              </>
+            ) : result.mode === "explain" ? (
               <>
                 <div className="space-y-2">
                   <h3 className="font-semibold">Summary</h3>
@@ -549,9 +641,7 @@ export function PdfSanitizerCard() {
               <>
                 <div className="space-y-2">
                   <h3 className="font-semibold">Intent summary</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {result.intentSummary}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{result.intentSummary}</p>
                 </div>
 
                 <div className="space-y-2">
