@@ -1,134 +1,101 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { DocumentCard, type LetterListItem } from "@/components/DocumentCard";
 
-type ExplainAiResult = {
-  mode: "explain";
-  title: string;
+type LetterWithSender = LetterListItem & {
+  sender: string;
 };
 
-type DraftReplyAiResult = {
-  mode: "draft-reply";
-  title: string;
-};
+const mockLetters: LetterWithSender[] = [
+  {
+    _id: "1",
+    fileName: "Fahrschule Letter",
+    sender: "Fahrschule",
+    action: "explain",
+    preview:
+      "The driving school asks to confirm the IBAN details and informs that the monthly course fee will be withdrawn automatically from the bank account starting in May.",
+    aiResult: {
+      mode: "explain",
+      title: "Driving school payment confirmation",
+    },
+    createdAt: new Date().toISOString(),
+    savedParts: ["clean text", "explanation"],
+  },
+  {
+    _id: "2",
+    fileName: "Jobcenter Letter",
+    sender: "Jobcenter",
+    action: "draft-reply",
+    preview:
+      "The Jobcenter requests additional documents such as insurance proof and bank statements before the stated deadline.",
+    aiResult: {
+      mode: "draft-reply",
+      title: "Jobcenter request for documents",
+    },
+    createdAt: new Date().toISOString(),
+    savedParts: ["clean text", "template answer"],
+  },
+  {
+    _id: "3",
+    fileName: "Jobcenter Letter Translation",
+    sender: "Jobcenter",
+    action: "translate",
+    preview:
+      "This saved package contains the cleaned text, the translation, and the explanation of the official letter.",
+    aiResult: {
+      mode: "translate",
+      title: "Jobcenter translated package",
+      targetLanguage: "EN",
+    },
+    createdAt: new Date().toISOString(),
+    savedParts: ["clean text", "translation", "explanation"],
+  },
+];
 
-type TranslateAiResult = {
-  mode: "translate";
-  title: string;
-  targetLanguage: string;
-};
+export default function Page() {
+  const [senderQuery, setSenderQuery] = useState("");
 
-type LetterListItem = {
-  _id: string;
-  fileName?: string | null;
-  action: "explain" | "draft-reply" | "translate";
-  preview: string;
-  aiResult?: ExplainAiResult | DraftReplyAiResult | TranslateAiResult;
-  createdAt: string;
-};
+  const filteredLetters = useMemo(() => {
+    const normalizedQuery = senderQuery.trim().toLowerCase();
 
-const Page = () => {
-  const [letters, setLetters] = useState<LetterListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function loadLetters() {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/letters`,
-          {
-            credentials: "include",
-          },
-        );
-
-        const data = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(data?.error || "Failed to load letters");
-        }
-
-        setLetters(data.letters ?? []);
-      } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : "Failed to load letters");
-      } finally {
-        setLoading(false);
-      }
+    if (!normalizedQuery) {
+      return mockLetters;
     }
 
-    loadLetters();
-  }, []);
+    return mockLetters.filter((letter) =>
+      letter.sender.toLowerCase().includes(normalizedQuery),
+    );
+  }, [senderQuery]);
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Saved letters</h1>
-        <p className="text-sm text-muted-foreground">
-          Sanitized documents and AI outputs saved in MongoDB.
-        </p>
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Saved letters</h1>
+          <p className="text-sm text-muted-foreground">Search by sender.</p>
+        </div>
+
+        <Input
+          value={senderQuery}
+          onChange={(e) => setSenderQuery(e.target.value)}
+          placeholder="Search by sender..."
+          className="max-w-sm"
+        />
       </div>
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading letters...</p>
-      ) : error ? (
-        <p className="text-sm text-red-500">{error}</p>
-      ) : letters.length === 0 ? (
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle>No saved letters yet</CardTitle>
-            <CardDescription>
-              Analyze, draft, or translate a document to create your first saved item.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      {filteredLetters.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No letters found for this sender.
+        </p>
       ) : (
         <div className="grid gap-4">
-          {letters.map((letter) => (
-            <Card key={letter._id} className="rounded-2xl">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <CardTitle>
-                      {letter.aiResult?.title || letter.fileName || "Untitled letter"}
-                    </CardTitle>
-                    <CardDescription>
-                      {letter.fileName || "No filename"} ·{" "}
-                      {new Date(letter.createdAt).toLocaleString()}
-                    </CardDescription>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{letter.action}</Badge>
-                    {letter.aiResult?.mode === "translate" && (
-                      <Badge variant="outline">
-                        {letter.aiResult.targetLanguage}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-2">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {letter.preview}
-                  {letter.preview.length >= 180 ? "..." : ""}
-                </p>
-              </CardContent>
-            </Card>
+          {filteredLetters.map((letter) => (
+            <DocumentCard key={letter._id} letter={letter} />
           ))}
         </div>
       )}
     </div>
   );
-};
-
-export default Page;
+}
