@@ -34,9 +34,12 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
+import { useDeadlineCount } from "@/context/deadline-count-context";
 
 const AppSidebar = () => {
   const { user, loading, logout } = useAuth();
+  const { deadlineCount } = useDeadlineCount();
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4 pt-5 pb-5">
@@ -44,45 +47,48 @@ const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href="/">
-                <Image
-                  src="/logo.svg"
-                  alt="logo"
-                  width={40}
-                  height={40}
-                ></Image>
+                <Image src="/logo.svg" alt="logo" width={40} height={40} />
                 <span>Brivo</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarSeparator />
+
         <SidebarGroup>
-          <SidebarGroupLabel>Sidebar</SidebarGroupLabel>
+          <SidebarGroupLabel>Helpers</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/callendar">
-                      <RiCalendar2Line />
-                      Callendar
-                    </Link>
-                  </SidebarMenuButton>
-                    <SidebarMenuBadge>12</SidebarMenuBadge>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/editor">
-                      <RiEditBoxLine/>
-                      Document Assistant
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/calendar">
+                    <RiCalendar2Line />
+                    Calendar
+                  </Link>
+                </SidebarMenuButton>
+
+                {deadlineCount > 0 && (
+                  <SidebarMenuBadge>{deadlineCount}</SidebarMenuBadge>
+                )}
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/editor">
+                    <RiEditBoxLine />
+                    Document Assistant
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
         <SidebarSeparator />
+
         {!loading && user && (
           <SidebarGroup>
             <SidebarGroupLabel>Letters</SidebarGroupLabel>
@@ -101,20 +107,12 @@ const AppSidebar = () => {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/#">
-                      <RiAddLine />
-                      Add new Letter
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
       </SidebarContent>
+
       <SidebarFooter>
         {user && (
           <SidebarMenu>
@@ -124,13 +122,16 @@ const AppSidebar = () => {
                   <SidebarMenuButton>
                     <RiUser2Line />
                     {user.name ?? user.email}
-                    <RiArrowDropUpLine className="ml-auto"></RiArrowDropUpLine>
+                    <RiArrowDropUpLine className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent>
-                  <DropdownMenuItem>
-                    <RiUser2Line />
-                    Account
+                  <DropdownMenuItem asChild>
+                    <Link href="/account">
+                      <RiUser2Line />
+                      Account
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <RiSettings2Line />

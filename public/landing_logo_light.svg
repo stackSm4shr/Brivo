@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="380" viewBox="0 0 640 380" fill="none">
+
+  <!-- background -->
+  <rect width="640" height="380" fill="oklch(1 0 0)"></rect>
+
+  <!-- icon -->
+  <g transform="translate(240 40)">
+
+    <rect width="160" height="160" rx="36" fill="oklch(1 0 0)"></rect>
+
+    <!-- top document -->
+    <path d="M40 28H95L120 55V78H40V28Z" fill="oklch(0.72 0.16 58)"></path>
+
+    <!-- fold -->
+    <path d="M95 28V55H120" stroke="oklch(1 0 0)" stroke-width="6" stroke-linejoin="round"></path>
+
+    <!-- bottom document -->
+    <path d="M40 88H95L120 115V138H40V88Z" fill="oklch(0.67 0.16 58)"></path>
+
+    <!-- fold -->
+    <path d="M95 88V115H120" stroke="oklch(1 0 0)" stroke-width="6" stroke-linejoin="round"></path>
+
+  </g>
+
+  <!-- title -->
+  <text x="320" y="280" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="600" letter-spacing="-0.02em" fill="oklch(0.22 0.02 260)">
+    Brivo
+  </text>
+
+</svg>
