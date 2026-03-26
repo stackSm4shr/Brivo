@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { AuthProvider } from "@/context/auth-context";
+import { DeadlineCountProvider } from "@/context/deadline-count-context";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -20,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Your App",
-  description: "Your app description",
+  title: "Brivo",
+  description: "AI bureaucracy helper",
 };
 
 export default function RootLayout({
@@ -35,7 +36,9 @@ export default function RootLayout({
       className={jetbrainsMono.variable}
       suppressHydrationWarning={true}
     >
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -43,7 +46,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <DeadlineCountProvider>{children}</DeadlineCountProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
