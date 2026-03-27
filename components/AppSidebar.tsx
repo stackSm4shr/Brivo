@@ -35,10 +35,17 @@ import {
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
 import { useDeadlineCount } from "@/context/deadline-count-context";
+import { useRouter } from "next/navigation";
 
 const AppSidebar = () => {
   const { user, loading, logout } = useAuth();
   const { deadlineCount } = useDeadlineCount();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -133,15 +140,15 @@ const AppSidebar = () => {
                       Account
                     </Link>
                   </DropdownMenuItem>
+
                   <DropdownMenuItem>
                     <RiSettings2Line />
                     Settings
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
                     variant="destructive"
-                    onClick={async () => {
-                      await logout();
-                    }}
+                    onClick={handleLogout}
                   >
                     <RiLogoutBoxLine />
                     Logout
